@@ -7,11 +7,12 @@ class Engine {
     }
 
     getTable (tableName) {
-        return db.getTable(tableName);
+        return this.db.getTable(tableName);
     }
 
     insertar (tabla/*Table Class*/, data) {
         tabla.data.push(data);
+        this.db.flush(tabla);
         return tabla.data.length;
     }
 
@@ -23,6 +24,7 @@ class Engine {
     actualizar (tabla, fila, data) {
         let oldValue = tabla.data[fila];
         let newValue = tabla.data[fila] = data;
+        this.db.flush(tabla);
         return {oldValue, newValue};
     }
 }
