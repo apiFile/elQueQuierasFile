@@ -24,7 +24,7 @@ class Engine {
     actualizar (tabla, fila, data) {
         let oldValue = tabla.data[fila];
         let newValue = tabla.data[fila] = data;
-        this.db.flush(tabla);
+        this.db.flush(tabla);x
         return {oldValue, newValue};
     }
 }
