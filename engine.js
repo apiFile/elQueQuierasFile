@@ -59,7 +59,7 @@ class Engine {
         });
 
         //borrar referencias
-        this.persisStackTables = null;
+        this.updateStack = null;
         this.persistStack = null;
     }
 }
