@@ -4,6 +4,7 @@ class Engine {
         this.rawDb = rawDb;
         this.db = JSON.parse(rawDb);
         this.persistStack = [];
+        this.updateStack = [];
         this.persisStackTables = [];
     }
 
@@ -30,6 +31,13 @@ class Engine {
         this.persistStack.push(entity);
     }
 
+    update(entity) {
+        if ( ! this.isTableInStack(entity.table) )
+            this.persisStackTables.push(entity.table);
+
+        this.updateStack.push(entity);
+    }
+
     isTableInStack (table) {
         return this.persisStackTables.find(t => t.name === table.name);
     }
@@ -39,16 +47,20 @@ class Engine {
         this.persistStack.forEach(e => {
             e.table.persistEntity(e);
         });
-        this.persisStackTables.forEach(t => {
-            t.updateEntities();
 
+        this.updateStack.forEach(e => {
+            e.table.updateEntity(e);
+        })
+        this.persisStackTables.forEach(t => {
             //actualizar DB
             let index = this.db.findIndex(dbT => dbT.name === t.name);
             this.db[index] = t.getPlainObject();
             echo(this.db);
         });
 
-
+        //borrar referencias
+        this.persisStackTables = null;
+        this.persistStack = null;
     }
 }
 
@@ -59,7 +71,6 @@ class Table {
         this.name = name;
         this.findersKeys = [];
         this.data = [];
-        this.stackUpdateEntity = [];
     }
 
     addData (data/* Array */) {
@@ -86,20 +97,17 @@ class Table {
 
     findBy (key, value) {
         let results = [];
+
         this.data.forEach(row => {
 
             if (!(key in row)) { echo(key+value); return};
             if (row[key] !== value) return;
 
             let entity;
-            if (entity = this.stackUpdateEntity.find(e => e.id === row.id)) {
-                results.push(entity);
-                return;
-            }
             entity = new Entity(row, this);
-            this.stackUpdateEntity.push(entity)
             results.push(entity);
         });
+
         return results;
     }
 
@@ -115,13 +123,11 @@ class Table {
 
     persistEntity (entity) {
         entity.setId(this.data.length);
-        return this.data.push(entity.getPlainObject());
+        this.data.push(entity.getPlainObject());
     }
 
-    updateEntities () {
-        this.stackUpdateEntity.forEach(e => {
-            this.data[e.getId()] = e.getPlainObject();
-        });
+    updateEntity (entity) {
+        this.data[entity.getId()] = entity.getPlainObject();
     }
 
     getPlainObject () {
@@ -169,6 +175,9 @@ class Entity {
     }
 }
 
+/*
+https://stackoverflow.com/questions/1026069/how-do-i-make-the-first-letter-of-a-string-uppercase-in-javascript?answertab=votes#tab-top
+ */
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
